@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-ratifia",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Pause an n8n workflow for human approval. Ratifia routes the decision to a person, records who decided and why, and the workflow continues on their answer.",
   "keywords": [
     "n8n-community-node-package",
@@ -27,7 +27,7 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsc && cp nodes/Ratifia/*.svg dist/nodes/Ratifia/ 2>/dev/null || true",
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit && n8n-node lint",
     "test": "vitest run --passWithNoTests",
     "prepublishOnly": "npm run lint && npm test && npm run build"
   },
@@ -44,7 +44,9 @@
     ]
   },
   "devDependencies": {
+    "@n8n/node-cli": "^0.51.4",
     "@types/node": "^20.0.0",
+    "eslint": "^9.29.0",
     "n8n-workflow": "^1.60.0",
     "typescript": "^5.6.0",
     "vitest": "^2.0.0"

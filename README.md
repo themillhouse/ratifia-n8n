@@ -5,7 +5,9 @@ person, records who decided and why, and the workflow continues on their answer.
 
 ## Install
 
-Settings → Community Nodes → Install → `n8n-nodes-ratifia`
+**n8n Cloud:** open the nodes panel, search for **Ratifia**, and install it.
+
+**Self-hosted n8n:** Settings → Community Nodes → Install → `n8n-nodes-ratifia`
 
 ## Credential
 
@@ -109,9 +111,8 @@ leaves the branch hanging.
 ## Notes
 
 `Request Approval and Wait` polls. It does not need a public URL, so it works on
-self-hosted n8n and local Docker alike, with no tunnel.
+n8n Cloud, self-hosted n8n and local Docker alike, with no tunnel.
 
-n8n Cloud runs only community nodes that n8n has verified. This node is not
-verified yet, so today it needs a self-hosted n8n.
+This node is verified by n8n.
 
 Docs: https://docs.ratifia.com/n8n

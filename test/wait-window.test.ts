@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { waitWindowMs } from './Ratifia.node';
+import { waitWindowMs } from '../nodes/Ratifia/Ratifia.node';
 
 const NOW = Date.UTC(2026, 0, 1, 12, 0, 0);
 const mins = (n: number) => n * 60_000;

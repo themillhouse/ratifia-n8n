@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IExecuteFunctions } from 'n8n-workflow';
-import { buildLinksBlock, buildProposedOutput, buildResponseSpec, dashboardUrl } from './Ratifia.node';
+import { buildLinksBlock, buildProposedOutput, buildResponseSpec, dashboardUrl } from '../nodes/Ratifia/Ratifia.node';
 
 /**
  * A stand-in for the parts of IExecuteFunctions these builders touch: reading

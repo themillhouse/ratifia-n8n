@@ -7,8 +7,9 @@ import type {
 	INodeTypeDescription,
 	IHttpRequestOptions,
 	IDataObject,
+	JsonObject,
 } from 'n8n-workflow';
-import { NodeOperationError } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionTypes, NodeOperationError, sleep, UserError } from 'n8n-workflow';
 import { createHash } from 'crypto';
 import { buildTestDecision, TEST_TIMEOUT_SEC } from './test-decision';
 
@@ -33,11 +34,9 @@ export class Ratifia implements INodeType {
 		subtitle: '={{$parameter["operation"]}}',
 		description: 'Pause for human approval and continue on the answer',
 		defaults: { name: 'Ratifia' },
-		// String literals rather than the NodeConnectionType enum: it is exported
-		// as a type-only symbol in some n8n-workflow versions, and this form is
-		// accepted by all of them.
-		inputs: ['main'] as unknown as INodeTypeDescription['inputs'],
-		outputs: ['main'] as unknown as INodeTypeDescription['outputs'],
+		inputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main],
+		usableAsTool: true,
 		credentials: [{ name: 'ratifiaApi', required: true }],
 		properties: [
 			{
@@ -48,23 +47,10 @@ export class Ratifia implements INodeType {
 				default: 'requestAndWait',
 				options: [
 					{
-						name: 'Request Approval and Wait',
-						value: 'requestAndWait',
-						description: 'Ask a human and hold the workflow until they answer',
-						action: 'Request approval and wait for the verdict',
-					},
-					{
-						name: 'Request Approval',
-						value: 'request',
-						description: 'Ask a human and continue immediately, returning the decision ID',
-						action: 'Request approval without waiting',
-					},
-					{
-						name: 'Verify Approval',
-						value: 'verify',
-						description:
-							'Check, without spending it, that an approval covers the action you are about to take',
-						action: 'Verify an approval',
+						name: 'Cancel Decision',
+						value: 'cancel',
+						description: 'Withdraw a decision nobody needs to answer any more',
+						action: 'Cancel a decision',
 					},
 					{
 						name: 'Consume Approval',
@@ -80,10 +66,16 @@ export class Ratifia implements INodeType {
 						action: 'Get a decision',
 					},
 					{
-						name: 'Cancel Decision',
-						value: 'cancel',
-						description: 'Withdraw a decision nobody needs to answer any more',
-						action: 'Cancel a decision',
+						name: 'Request Approval',
+						value: 'request',
+						description: 'Ask a human and continue immediately, returning the decision ID',
+						action: 'Request approval without waiting',
+					},
+					{
+						name: 'Request Approval and Wait',
+						value: 'requestAndWait',
+						description: 'Ask a human and hold the workflow until they answer',
+						action: 'Request approval and wait for the verdict',
 					},
 					{
 						name: 'Send a Test Decision',
@@ -91,6 +83,13 @@ export class Ratifia implements INodeType {
 						description:
 							'Send yourself a sample decision to see how it looks in Ratifia. Creates a real decision that expires on its own; nothing else happens either way.',
 						action: 'Send a test decision',
+					},
+					{
+						name: 'Verify Approval',
+						value: 'verify',
+						description:
+							'Check, without spending it, that an approval covers the action you are about to take',
+						action: 'Verify an approval',
 					},
 				],
 			},
@@ -115,7 +114,7 @@ export class Ratifia implements INodeType {
 				typeOptions: { loadOptionsMethod: 'getPolicies' },
 				default: '',
 				description:
-					'Policy supplying who approves, how many must agree, the expiry, and which Data fields are required. Choose from the list of policies in your org, or specify an ID using an expression. Without one, set Approvers to name who can answer.',
+					'Policy supplying who approves, how many must agree, the expiry, and which Data fields are required. Without one, set Approvers to name who can answer. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				displayOptions: { show: { operation: ['request', 'requestAndWait', 'test'] } },
 			},
 
@@ -315,6 +314,14 @@ export class Ratifia implements INodeType {
 						name: 'fact',
 						values: [
 							{
+								displayName: 'Description',
+								name: 'description',
+								type: 'string',
+								default: '',
+								description: 'Optional note shown to the reviewer, e.g. "From Stripe"',
+								displayOptions: { show: { showReviewer: [true] } },
+							},
+							{
 								displayName: 'Name',
 								name: 'name',
 								type: 'string',
@@ -322,22 +329,6 @@ export class Ratifia implements INodeType {
 								required: true,
 								description: 'Field name, e.g. amount',
 							},
-							{
-								displayName: 'Type',
-								name: 'type',
-								type: 'options',
-								default: 'string',
-								description:
-									'How the value is canonicalised before hashing. Getting this wrong changes the hash, so an array sent as a string will not match at the action.',
-								options: [
-									{ name: 'String', value: 'string' },
-									{ name: 'Number', value: 'number' },
-									{ name: 'Boolean', value: 'boolean' },
-									{ name: 'Array (JSON)', value: 'array' },
-									{ name: 'Object (JSON)', value: 'object' },
-								],
-							},
-							{ displayName: 'Value', name: 'value', type: 'string', default: '' },
 							{
 								displayName: 'Show Reviewer',
 								name: 'showReviewer',
@@ -362,13 +353,21 @@ export class Ratifia implements INodeType {
 								],
 							},
 							{
-								displayName: 'Description',
-								name: 'description',
-								type: 'string',
-								default: '',
-								description: 'Optional note shown to the reviewer, e.g. "From Stripe"',
-								displayOptions: { show: { showReviewer: [true] } },
+								displayName: 'Type',
+								name: 'type',
+								type: 'options',
+								default: 'string',
+								description:
+									'How the value is canonicalised before hashing. Getting this wrong changes the hash, so an array sent as a string will not match at the action.',
+								options: [
+									{ name: 'Array (JSON)', value: 'array' },
+									{ name: 'Boolean', value: 'boolean' },
+									{ name: 'Number', value: 'number' },
+									{ name: 'Object (JSON)', value: 'object' },
+									{ name: 'String', value: 'string' },
+								],
 							},
+							{ displayName: 'Value', name: 'value', type: 'string', default: '' },
 						],
 					},
 				],
@@ -382,27 +381,11 @@ export class Ratifia implements INodeType {
 				displayOptions: { show: { operation: ['request', 'requestAndWait'] } },
 				options: [
 					{
-						displayName: 'Title',
-						name: 'title',
-						type: 'string',
-						default: '',
-						description: 'Short headline the reviewer UI leads with, instead of the full question',
-					},
-					{
-						displayName: 'Data (JSON)',
-						name: 'data',
-						type: 'json',
-						default: '{}',
-						description:
-							'The facts of the decision, shown to the reviewer, e.g. {"amount": 7200}. Say where a value came from with {"amount": {"value": 7200, "src": "tool", "description": "From Stripe"}}; src is ai, tool, human or unknown. A policy with a context contract refuses data that does not match it.',
-					},
-					{
-						displayName: 'Facts (JSON)',
-						name: 'facts',
-						type: 'json',
-						default: '{}',
-						description:
-							'The exact values this approval covers, for example the recipient, subject and body of an email. Only a hash is sent. Pass the same facts to Verify or Consume before acting: if anything changed, the approval no longer covers it.',
+						displayName: 'Approvals Required',
+						name: 'approvalsRequired',
+						type: 'number',
+						default: 1,
+						description: 'Without a policy: how many of the approvers must approve. At most the number of approvers. Not allowed with a policy.',
 					},
 					{
 						displayName: 'Approvers',
@@ -413,11 +396,12 @@ export class Ratifia implements INodeType {
 						description: 'Without a policy: who can answer, comma-separated. Not allowed with a policy (the policy decides who). Prefer a policy for anything recurring.',
 					},
 					{
-						displayName: 'Approvals Required',
-						name: 'approvalsRequired',
-						type: 'number',
-						default: 1,
-						description: 'Without a policy: how many of the approvers must approve. At most the number of approvers. Not allowed with a policy.',
+						displayName: 'Data (JSON)',
+						name: 'data',
+						type: 'json',
+						default: '{}',
+						description:
+							'The facts of the decision, shown to the reviewer, e.g. {"amount": 7200}. Say where a value came from with {"amount": {"value": 7200, "src": "tool", "description": "From Stripe"}}; src is ai, tool, human or unknown. A policy with a context contract refuses data that does not match it.',
 					},
 					{
 						displayName: 'Expected Policy Version',
@@ -425,6 +409,14 @@ export class Ratifia implements INodeType {
 						type: 'number',
 						default: 0,
 						description: 'With a policy: the version this workflow was built against. If the policy has changed since, the request fails instead of running under rules you have not reviewed. 0 accepts the current version.',
+					},
+					{
+						displayName: 'Facts (JSON)',
+						name: 'facts',
+						type: 'json',
+						default: '{}',
+						description:
+							'The exact values this approval covers, for example the recipient, subject and body of an email. Only a hash is sent. Pass the same facts to Verify or Consume before acting: if anything changed, the approval no longer covers it.',
 					},
 					{
 						displayName: 'Required',
@@ -441,6 +433,13 @@ export class Ratifia implements INodeType {
 						default: 0,
 						description:
 							'Without a policy: auto-expire the decision after this long. 0 leaves it open indefinitely. An expired decision resolves as EXPIRED, not approved. Not allowed with a policy (the policy sets the expiry).',
+					},
+					{
+						displayName: 'Title',
+						name: 'title',
+						type: 'string',
+						default: '',
+						description: 'Short headline the reviewer UI leads with, instead of the full question',
 					},
 					{
 						displayName: 'Workflow Reference',
@@ -526,11 +525,11 @@ export class Ratifia implements INodeType {
 								default: 'string',
 								description: 'Must match the type used when the approval was requested',
 								options: [
-									{ name: 'String', value: 'string' },
-									{ name: 'Number', value: 'number' },
-									{ name: 'Boolean', value: 'boolean' },
 									{ name: 'Array (JSON)', value: 'array' },
+									{ name: 'Boolean', value: 'boolean' },
+									{ name: 'Number', value: 'number' },
 									{ name: 'Object (JSON)', value: 'object' },
+									{ name: 'String', value: 'string' },
 								],
 							},
 							{ displayName: 'Value', name: 'value', type: 'string', default: '' },
@@ -830,7 +829,7 @@ export class Ratifia implements INodeType {
 
 				let decision: DecisionView = { id: decisionId, status: 'PENDING' };
 				while (Date.now() < deadline) {
-					await new Promise((r) => setTimeout(r, intervalSec * 1000));
+					await sleep(intervalSec * 1000);
 					decision = unwrap(
 						await call({ method: 'GET', url: `${baseUrl}/v1/worker/decisions/${decisionId}` }),
 					) as DecisionView;
@@ -875,7 +874,10 @@ export class Ratifia implements INodeType {
 					});
 					continue;
 				}
-				throw error;
+				// Both constructors hand back an error that is already their type,
+				// so an HTTP failure keeps its status and response details.
+				if (error instanceof NodeApiError) throw new NodeApiError(this.getNode(), error as unknown as JsonObject);
+				throw new NodeOperationError(this.getNode(), error as Error, { itemIndex: i });
 			}
 		}
 
@@ -1134,7 +1136,7 @@ function parseFacts(raw: unknown, ctx: IExecuteFunctions, itemIndex: number): ID
 export function canonicalFacts(value: unknown, path = 'facts'): string {
 	if (value === null || typeof value === 'boolean' || typeof value === 'string') return JSON.stringify(value);
 	if (typeof value === 'number') {
-		if (!Number.isFinite(value)) throw new Error(`${path} is not a finite number`);
+		if (!Number.isFinite(value)) throw new UserError(`${path} is not a finite number`);
 		return JSON.stringify(value);
 	}
 	if (Array.isArray(value)) return `[${value.map((v, i) => canonicalFacts(v, `${path}[${i}]`)).join(',')}]`;
@@ -1143,12 +1145,12 @@ export function canonicalFacts(value: unknown, path = 'facts'): string {
 		return `{${Object.keys(obj)
 			.sort()
 			.map((k) => {
-				if (obj[k] === undefined) throw new Error(`${path}.${k} is undefined; omit the key or use null`);
+				if (obj[k] === undefined) throw new UserError(`${path}.${k} is undefined; omit the key or use null`);
 				return `${JSON.stringify(k)}:${canonicalFacts(obj[k], `${path}.${k}`)}`;
 			})
 			.join(',')}}`;
 	}
-	throw new Error(`${path} must be plain JSON`);
+	throw new UserError(`${path} must be plain JSON`);
 }
 
 /** Lowercase hex sha256 of the canonical facts. */

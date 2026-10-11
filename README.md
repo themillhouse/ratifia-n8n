@@ -115,38 +115,3 @@ n8n Cloud runs only community nodes that n8n has verified. This node is not
 verified yet, so today it needs a self-hosted n8n.
 
 Docs: https://docs.ratifia.com/n8n
-
-## Development
-
-```bash
-npm ci --ignore-scripts   # skips a native module only n8n itself needs
-npm run lint    # tsc --noEmit
-npm test        # vitest
-npm run build   # compiles to dist/
-```
-
-To try a local build in n8n, run `npm pack` and install the tarball in a
-self-hosted n8n (`npm install /path/to/n8n-nodes-ratifia-x.y.z.tgz` inside the
-n8n custom nodes directory, usually `~/.n8n/custom`), then restart n8n.
-
-### The facts hash
-
-The node hashes the facts an approval covers when it asks, and again when it
-verifies or consumes. Ratifia never sees the facts; it only compares the two
-hashes. The node computes the hash itself, with no runtime dependencies, so it
-must match every other Ratifia client byte for byte, or an approval requested
-here could not be consumed by your own code through the Ratifia SDK.
-
-`test/facts-hash.vectors.json` holds the golden vectors that pin this: inputs,
-their canonical JSON and their SHA-256. Every Ratifia client tests against an
-identical copy. Do not edit it to make a test pass. A change to it is a
-breaking protocol change and must land in every client at once.
-
-## Releasing
-
-1. Bump `version` in `package.json` and merge to `main`.
-2. Publish a GitHub release whose tag is `v` plus that version, for example
-   `v0.1.0`.
-3. The **Publish** workflow tests, builds and publishes to npm with
-   provenance. It refuses a tag that does not match `package.json`, and skips
-   a version that is already on npm.

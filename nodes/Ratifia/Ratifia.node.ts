@@ -50,20 +50,20 @@ export class Ratifia implements INodeType {
 						name: 'Cancel Decision',
 						value: 'cancel',
 						description: 'Withdraw a decision nobody needs to answer any more',
-						action: 'Cancel a decision',
+						action: 'Cancel decision',
 					},
 					{
 						name: 'Consume Approval',
 						value: 'consume',
 						description:
 							'Spend an approval on exactly one action, immediately before you take it. Refuses anything it does not cover.',
-						action: 'Consume an approval',
+						action: 'Consume approval',
 					},
 					{
 						name: 'Get Decision',
 						value: 'get',
 						description: 'Read the current state of a decision',
-						action: 'Get a decision',
+						action: 'Get decision',
 					},
 					{
 						name: 'Request Approval',
@@ -82,14 +82,14 @@ export class Ratifia implements INodeType {
 						value: 'test',
 						description:
 							'Send yourself a sample decision to see how it looks in Ratifia. Creates a real decision that expires on its own; nothing else happens either way.',
-						action: 'Send a test decision',
+						action: 'Send test decision',
 					},
 					{
 						name: 'Verify Approval',
 						value: 'verify',
 						description:
 							'Check, without spending it, that an approval covers the action you are about to take',
-						action: 'Verify an approval',
+						action: 'Verify approval',
 					},
 				],
 			},
@@ -102,7 +102,7 @@ export class Ratifia implements INodeType {
 				typeOptions: { rows: 3 },
 				default: '',
 				required: true,
-				placeholder: 'Send this refund of $840 to the customer?',
+				placeholder: 'e.g. Send this refund of $840 to the customer?',
 				description:
 					'The question the reviewer sees. Write it so someone with no context can answer it.',
 				displayOptions: { show: { operation: ['request', 'requestAndWait'] } },
@@ -124,7 +124,7 @@ export class Ratifia implements INodeType {
 				name: 'testApprovers',
 				type: 'string',
 				default: '',
-				placeholder: 'you@acme.com',
+				placeholder: 'e.g. you@acme.com',
 				description:
 					'Who receives the test, comma-separated. They must already be a verified approver in your org. Leave empty to let the policy above decide.',
 				displayOptions: { show: { operation: ['test'] } },
@@ -158,7 +158,7 @@ export class Ratifia implements INodeType {
 								type: 'string',
 								default: '',
 								required: true,
-								placeholder: 'Support ticket',
+								placeholder: 'e.g. Support ticket',
 							},
 							{
 								displayName: 'URL',
@@ -166,7 +166,7 @@ export class Ratifia implements INodeType {
 								type: 'string',
 								default: '',
 								required: true,
-								placeholder: 'https://acme.atlassian.net/browse/SUP-4471',
+								placeholder: 'e.g. https://acme.atlassian.net/browse/SUP-4471',
 							},
 							{
 								displayName: 'Description',
@@ -214,7 +214,7 @@ export class Ratifia implements INodeType {
 								type: 'string',
 								default: '',
 								required: true,
-								placeholder: 'duplicate_charge',
+								placeholder: 'e.g. duplicate_charge',
 								description: 'What your workflow branches on. Not shown to the reviewer.',
 							},
 							{
@@ -223,7 +223,7 @@ export class Ratifia implements INodeType {
 								type: 'string',
 								default: '',
 								required: true,
-								placeholder: 'Duplicate charge',
+								placeholder: 'e.g. Duplicate charge',
 								description: 'What the reviewer sees',
 							},
 							{
@@ -391,7 +391,7 @@ export class Ratifia implements INodeType {
 						displayName: 'Approvers',
 						name: 'approvers',
 						type: 'string',
-						placeholder: 'dana@acme.com, lee@acme.com',
+						placeholder: 'e.g. dana@acme.com, lee@acme.com',
 						default: '',
 						description: 'Without a policy: who can answer, comma-separated. Not allowed with a policy (the policy decides who). Prefer a policy for anything recurring.',
 					},
@@ -482,7 +482,7 @@ export class Ratifia implements INodeType {
 						type: 'boolean',
 						default: false,
 						description:
-							'Whether to error when a human rejects. Off by default so you can branch on status with an IF node, which is usually clearer than error handling.',
+							'Whether to stop the execution when a human rejects. Off by default so you can branch on the status with an IF node instead.',
 					},
 				],
 			},
@@ -494,7 +494,7 @@ export class Ratifia implements INodeType {
 				type: 'string',
 				default: '',
 				required: true,
-				placeholder: 'dec_a1b2c3...',
+				placeholder: 'e.g. dec_a1b2c3...',
 				displayOptions: { show: { operation: ['get', 'cancel', 'verify', 'consume'] } },
 			},
 			// FN-358: the same table on the action side. No Show Reviewer or Source
@@ -551,7 +551,7 @@ export class Ratifia implements INodeType {
 				name: 'stepRef',
 				type: 'string',
 				default: '',
-				placeholder: 'Send Refund Approval',
+				placeholder: 'e.g. Send Refund Approval',
 				description:
 					'The step the approval was raised for, which is the requesting node\'s name unless you overrode it. Naming it here refuses an approval raised for a different step (step_mismatch). Leave empty to skip that check.',
 				displayOptions: { show: { operation: ['verify', 'consume'] } },
@@ -562,7 +562,7 @@ export class Ratifia implements INodeType {
 				type: 'string',
 				default: '',
 				required: true,
-				placeholder: 'send-email:{{ $json.messageId }}',
+				placeholder: 'e.g. send-email:{{ $json.messageId }}',
 				description:
 					'A stable key for this one action. A retry with the same key is reported as already consumed, so it is safe to retry; a different key is refused.',
 				displayOptions: { show: { operation: ['consume'] } },

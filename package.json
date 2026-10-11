@@ -1,0 +1,60 @@
+{
+  "name": "n8n-nodes-ratifia",
+  "version": "0.1.0",
+  "description": "Pause an n8n workflow for human approval. Ratifia routes the decision to a person, records who decided and why, and the workflow continues on their answer.",
+  "keywords": [
+    "n8n-community-node-package",
+    "ratifia",
+    "approval",
+    "human-in-the-loop",
+    "hitl",
+    "ai-agent",
+    "governance"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Ratifia",
+    "url": "https://ratifia.com"
+  },
+  "homepage": "https://docs.ratifia.com/n8n",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/themillhouse/ratifia-n8n.git"
+  },
+  "bugs": {
+    "url": "https://github.com/themillhouse/ratifia-n8n/issues"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc && cp nodes/Ratifia/*.svg dist/nodes/Ratifia/ 2>/dev/null || true",
+    "lint": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "prepublishOnly": "npm run lint && npm test && npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/RatifiaApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Ratifia/Ratifia.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "n8n-workflow": "^1.60.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

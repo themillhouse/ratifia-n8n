@@ -1,0 +1,62 @@
+name: Publish
+
+# Publishes n8n-nodes-ratifia to npm when a GitHub release is published.
+#
+# Provenance is what n8n requires before it will verify a community node, and
+# npm only issues provenance from a public repository through GitHub Actions
+# with an OIDC token, hence `id-token: write`.
+#
+# Auth, in order of preference:
+#   1. npm trusted publishing: configure this repo and workflow file as a
+#      trusted publisher on the package's npm settings page. No secret needed.
+#   2. An NPM_TOKEN repository secret with publish rights to n8n-nodes-ratifia.
+# The package must exist on npm before (1) can be configured, so the very first
+# publish needs (2).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@11
+      # --ignore-scripts: n8n-workflow is a build-time dependency for types only
+      # (n8n provides it at runtime), and it pulls in isolated-vm, a native module
+      # whose compile step is slow and fails on some runners. Nothing here needs it.
+      - run: npm ci --ignore-scripts
+      - name: Tag matches package.json
+        if: github.event_name == 'release'
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "Release tag ${GITHUB_REF_NAME} does not match package.json version v${version}"
+            exit 1
+          fi
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Publish with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "$name@$version is already on npm; nothing to publish"
+            exit 0
+          fi
+          npm publish --provenance --access public

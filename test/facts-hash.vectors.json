@@ -1,0 +1,180 @@
+{
+  "description": "Golden test vectors for the Ratifia facts hash (FN-259). Every client that computes factsHash must produce exactly these canonical strings and hashes. The API never hashes; it only compares the string a client sends at request time with the one sent at verify and consume. Change this file only together with the algorithm, in every client at once: that is a breaking protocol change.",
+  "algorithm": "factsHash = lowercase hex of sha256(utf8(canonical(facts))). canonical(facts): JSON with no whitespace; object keys sorted at every level by UTF-16 code unit; arrays keep their order; strings and numbers written exactly as ECMAScript JSON.stringify writes them. undefined, NaN, Infinity, Dates, functions, bigints and class instances are refused, never hashed.",
+  "vectors": [
+    {
+      "name": "refund",
+      "facts": {
+        "recipient": "dana@acme.com",
+        "receiptId": "rcpt_INV-2291",
+        "amount": 620
+      },
+      "canonical": "{\"amount\":620,\"receiptId\":\"rcpt_INV-2291\",\"recipient\":\"dana@acme.com\"}",
+      "sha256": "5e5f460295915359d48a2fd157f510ffe314bee421041d061791e5aa5505feb7"
+    },
+    {
+      "name": "refund, amount changed",
+      "facts": {
+        "recipient": "dana@acme.com",
+        "receiptId": "rcpt_INV-2291",
+        "amount": 6200
+      },
+      "canonical": "{\"amount\":6200,\"receiptId\":\"rcpt_INV-2291\",\"recipient\":\"dana@acme.com\"}",
+      "sha256": "af795b80383028732e41f6d3e01e65ef63c091b30345288296defaee3e6b11f8",
+      "note": "One digit changes the hash. This is the facts_mismatch case."
+    },
+    {
+      "name": "refund, keys in reverse order",
+      "facts": {
+        "amount": 620,
+        "receiptId": "rcpt_INV-2291",
+        "recipient": "dana@acme.com"
+      },
+      "canonical": "{\"amount\":620,\"receiptId\":\"rcpt_INV-2291\",\"recipient\":\"dana@acme.com\"}",
+      "sha256": "5e5f460295915359d48a2fd157f510ffe314bee421041d061791e5aa5505feb7",
+      "note": "Same sha256 as \"refund\": key order never matters."
+    },
+    {
+      "name": "nested objects are sorted at every level",
+      "facts": {
+        "payout": {
+          "currency": "USD",
+          "amountCents": 50000
+        },
+        "claimId": "c1"
+      },
+      "canonical": "{\"claimId\":\"c1\",\"payout\":{\"amountCents\":50000,\"currency\":\"USD\"}}",
+      "sha256": "a86a4424126da0faeb47c39101763a9a56f55c8873b17408887481375d9f4c27"
+    },
+    {
+      "name": "array order matters, ascending",
+      "facts": {
+        "ids": [
+          1,
+          2
+        ]
+      },
+      "canonical": "{\"ids\":[1,2]}",
+      "sha256": "eff9df2013c08a13cdd7ffabfcf9514b6f6411e2a0b52c5948c7036d3d442253"
+    },
+    {
+      "name": "array order matters, descending",
+      "facts": {
+        "ids": [
+          2,
+          1
+        ]
+      },
+      "canonical": "{\"ids\":[2,1]}",
+      "sha256": "b019dc39463ec779505698b22d9342dbe419ef5129637ee9dc525e4298c62ad8",
+      "note": "Different sha256 from the ascending case: arrays are not sorted."
+    },
+    {
+      "name": "empty facts",
+      "facts": {},
+      "canonical": "{}",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "name": "scalars",
+      "facts": {
+        "t": true,
+        "f": false,
+        "n": null,
+        "s": "",
+        "zero": 0
+      },
+      "canonical": "{\"f\":false,\"n\":null,\"s\":\"\",\"t\":true,\"zero\":0}",
+      "sha256": "1224a5dfff158c086e89678c8a7266d5c1b776f01558ca0be6ff8b383c8c6504"
+    },
+    {
+      "name": "empty containers",
+      "facts": {
+        "o": {},
+        "a": []
+      },
+      "canonical": "{\"a\":[],\"o\":{}}",
+      "sha256": "9bee7ebfc94b459dacb8cbc72cb2900e61f0aa42189df18329f84f92568f4f89"
+    },
+    {
+      "name": "numbers",
+      "facts": {
+        "int": 42,
+        "neg": -7,
+        "float": 0.1,
+        "sum": 0.30000000000000004,
+        "big": 1e+21,
+        "small": 1e-7,
+        "maxSafe": 9007199254740991,
+        "wholeFloat": 100.0
+      },
+      "canonical": "{\"big\":1e+21,\"float\":0.1,\"int\":42,\"maxSafe\":9007199254740991,\"neg\":-7,\"small\":1e-7,\"sum\":0.30000000000000004,\"wholeFloat\":100}",
+      "sha256": "556e78fa36cfaf647fe06b4da759e47886565f16d5e8ef4f1070ae5cabc0c39f",
+      "note": "Numbers are written the way ECMAScript JSON.stringify writes them: 1e+21, 1e-7, and 100.0 becomes 100. Python json.dumps writes 1e+21 as 1e+21 but 100.0 as 100.0 and 1e-7 as 1e-07, so a Python client must format numbers itself. Pass large ids as strings."
+    },
+    {
+      "name": "string escaping",
+      "facts": {
+        "quote": "say \"hi\"",
+        "backslash": "C:\\temp",
+        "newline": "line1\nline2",
+        "tab": "a\tb",
+        "bell": "\u0007",
+        "slash": "a/b"
+      },
+      "canonical": "{\"backslash\":\"C:\\\\temp\",\"bell\":\"\\u0007\",\"newline\":\"line1\\nline2\",\"quote\":\"say \\\"hi\\\"\",\"slash\":\"a/b\",\"tab\":\"a\\tb\"}",
+      "sha256": "1b17339a5f0e84f788940d262b1ce8e9847e00f1a5ae1eff33e7ed4a9cca128c",
+      "note": "Control characters become \\uXXXX (lowercase hex); \"/\" is not escaped."
+    },
+    {
+      "name": "non-ASCII strings are hashed as raw UTF-8",
+      "facts": {
+        "name": "José Müller",
+        "emoji": "refund 🎉",
+        "japanese": "払い戻し",
+        "hebrew": "שלום"
+      },
+      "canonical": "{\"emoji\":\"refund 🎉\",\"hebrew\":\"שלום\",\"japanese\":\"払い戻し\",\"name\":\"José Müller\"}",
+      "sha256": "0c01417ce5b496fc93b40f8521777fd6cbe02733e8aa3c6ae9a715ca7a2e02bb",
+      "note": "Not \\u-escaped. Python json.dumps escapes by default; pass ensure_ascii=False."
+    },
+    {
+      "name": "keys sort by UTF-16 code unit",
+      "facts": {
+        "9": 5,
+        "10": 4,
+        "a": 1,
+        "B": 2,
+        "_": 3,
+        "é": 6,
+        "z": 7
+      },
+      "canonical": "{\"10\":4,\"9\":5,\"B\":2,\"_\":3,\"a\":1,\"z\":7,\"é\":6}",
+      "sha256": "c62fd8dcd8b7b51a54a2be0a2d2113d8350f86fe6b9a3de03b76d4768b978411",
+      "note": "Plain string comparison, not numeric: \"10\" sorts before \"9\", uppercase before \"_\" before lowercase."
+    },
+    {
+      "name": "astral-plane keys sort by UTF-16 code unit, not code point",
+      "facts": {
+        "ｚ": 1,
+        "😀": 2
+      },
+      "canonical": "{\"😀\":2,\"ｚ\":1}",
+      "sha256": "315d5d6583cd79873f73c58eb4c25a2dad0e5c5717e4d2af2e3358dcf3e4d8b8",
+      "note": "U+1F600 is the surrogate pair D83D DE00, which sorts before U+FF5A. A code-point sort (Python sorted(), Go, Rust) puts it after and gets a different hash."
+    },
+    {
+      "name": "a realistic email action",
+      "facts": {
+        "recipient": "dana@acme.com",
+        "subject": "Your refund",
+        "body": "We have refunded $620.00 to your card.",
+        "attachments": [
+          "receipt-1042.pdf"
+        ]
+      },
+      "canonical": "{\"attachments\":[\"receipt-1042.pdf\"],\"body\":\"We have refunded $620.00 to your card.\",\"recipient\":\"dana@acme.com\",\"subject\":\"Your refund\"}",
+      "sha256": "67fdc69528933aedc91e45a95bc9235d5e7976d1b7a4f6341b6a7f6c1643a073"
+    }
+  ]
+}

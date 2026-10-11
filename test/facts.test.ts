@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { canonicalFacts, hashFacts } from './Ratifia.node';
+import { canonicalFacts, hashFacts } from '../nodes/Ratifia/Ratifia.node';
 
 // The node carries its own copy of the facts hash, because a verified community
 // node may not have runtime dependencies. It must match every other Ratifia
@@ -17,7 +17,7 @@ interface Vector {
 	sha256: string;
 }
 const { vectors } = JSON.parse(
-	readFileSync(resolve(__dirname, '../../test/facts-hash.vectors.json'), 'utf8'),
+	readFileSync(resolve(__dirname, 'facts-hash.vectors.json'), 'utf8'),
 ) as { vectors: Vector[] };
 
 describe('facts hash golden vectors', () => {

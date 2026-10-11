@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IExecuteFunctions } from 'n8n-workflow';
-import { hashFacts, readFactsTable } from './Ratifia.node';
+import { hashFacts, readFactsTable } from '../nodes/Ratifia/Ratifia.node';
 
 /** Minimal stub: readFactsTable only reads one parameter and names the node on error. */
 const ctx = (rows: unknown[]) =>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTestDecision, TEST_TIMEOUT_SEC } from './test-decision';
+import { buildTestDecision, TEST_TIMEOUT_SEC } from '../nodes/Ratifia/test-decision';
 
 const base = { runId: 'n8n-test-1', stepRef: 'Ratifia (test)', workflowRef: 'Refunds' };
 

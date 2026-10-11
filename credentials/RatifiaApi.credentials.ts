@@ -2,6 +2,7 @@ import type {
 	IAuthenticateGeneric,
 	ICredentialTestRequest,
 	ICredentialType,
+	Icon,
 	INodeProperties,
 } from 'n8n-workflow';
 
@@ -16,6 +17,8 @@ export class RatifiaApi implements ICredentialType {
 	name = 'ratifiaApi';
 
 	displayName = 'Ratifia API';
+
+	icon: Icon = 'file:../nodes/Ratifia/ratifia.svg';
 
 	documentationUrl = 'https://docs.ratifia.com/n8n';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { unwrap } from './Ratifia.node';
+import { unwrap } from '../nodes/Ratifia/Ratifia.node';
 
 describe('unwrap', () => {
 	it('unwraps a { decision: {...} } envelope', () => {

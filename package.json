@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-ratifia",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Pause an n8n workflow for human approval. Ratifia routes the decision to a person, records who decided and why, and the workflow continues on their answer.",
   "keywords": [
     "n8n-community-node-package",
@@ -14,6 +14,7 @@
   "license": "MIT",
   "author": {
     "name": "Ratifia",
+    "email": "support@ratifia.com",
     "url": "https://ratifia.com"
   },
   "homepage": "https://docs.ratifia.com/n8n",
